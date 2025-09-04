@@ -28,7 +28,23 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'drf_spectacular',
+    'diary'
 ]
+
+REST_FRAMEWORK = {
+
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'diary',
+    'DESCRIPTION': 'electr diary',
+    'VERSION': '0.0.0.0.1',
+    'SERVE_INCLUDE_SCHEMA': False,
+    # OTHER SETTINGS
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
