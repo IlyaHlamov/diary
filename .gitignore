@@ -1,0 +1,13 @@
+# Django
+*.pyc
+__pycache__/
+media/
+
+# Environment
+.env
+.venv/
+venv/
+
+# IDE
+.idea/
+.vscode/
