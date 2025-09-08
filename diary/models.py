@@ -13,7 +13,7 @@ class UUIDField(models.UUIDField):
         super().__init__(*args, **kwargs)
 
 class BaseModel(models.Model):
-    id = UUIDField(primary_key=True, editable=False)
+    id = UUIDField(primary_key=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -65,7 +65,6 @@ class UserRole(BaseModel):
         verbose_name='Пользователь'
     )
     role_type = models.CharField(
-        max_length=20,
         choices=RoleType.choices,
         verbose_name='Тип роли'
     )
@@ -128,7 +127,7 @@ class Subject(BaseModel):
 
 # уроки
 class Lesson(BaseModel):
-    date = models.DateField(verbose_name='Дата урока')
+    date = models.DateTimeField(verbose_name='Дата урока')
     group = models.ForeignKey(
         SchoolGroup,
         on_delete=models.CASCADE,
@@ -224,3 +223,60 @@ class Grade(BaseModel):
         if self.score > self.assignment.max_score:
             self.score = self.assignment.max_score
         super().save(*args, **kwargs)
+
+
+# Средний балл ученика по предмету
+class StudentSubjectAverage(BaseModel):
+    student = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='subject_averages',
+        verbose_name='Ученик'
+    )
+    subject = models.ForeignKey(
+        Subject,
+        on_delete=models.CASCADE,
+        related_name='student_averages',
+        verbose_name='Предмет'
+    )
+    average_score = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        verbose_name='Средний балл'
+    )
+    total_grades = models.PositiveIntegerField(verbose_name='Всего оценок')
+    last_updated = models.DateTimeField(auto_now=True, verbose_name='Последнее обновление')
+
+    class Meta:
+        verbose_name = 'Средний балл по предмету'
+        verbose_name_plural = 'Средние баллы по предметам'
+        unique_together = ['student', 'subject']
+        ordering = ['student', 'subject']
+
+    def __str__(self):
+        return f"{self.student} - {self.subject}: {self.average_score}"
+
+    @classmethod
+    def update_average(cls, student, subject):
+        # Получаем все оценки ученика по предмету
+        grades = Grade.objects.filter(
+            student=student,
+            assignment__lesson__subject=subject
+        )
+
+        total_grades = grades.count()
+        if total_grades > 0:
+            total_score = sum(grade.score for grade in grades)
+            average_score = total_score / total_grades
+
+            # Обновляем или создаем запись
+            cls.objects.update_or_create(
+                student=student,
+                subject=subject,
+                defaults={
+                    'average_score': average_score,
+                    'total_grades': total_grades
+                }
+            )
+        else:
+            cls.objects.filter(student=student, subject=subject).delete()
