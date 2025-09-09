@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
@@ -24,15 +26,19 @@ class BaseModel(models.Model):
 class User(AbstractUser, BaseModel):
     phone_regex = RegexValidator(regex=r'^\+?1?\d{9,12}$',message="формат: '+999999999'. До 12 цифр.")
 
+
     email = models.EmailField(unique=True, verbose_name='Электронная почта')
     first_name = models.CharField(max_length=50, verbose_name='Имя')
     last_name = models.CharField(max_length=50, verbose_name='Фамилия')
     phone_number = models.CharField(validators=[phone_regex],max_length=13,blank=True,verbose_name='Номер телефона')
     birth_date = models.DateField(null=True, blank=True, verbose_name='Дата рождения')
+    username = models.CharField(max_length=150,unique=True,blank=True,null=True,default=None,)
+
 
     # Убираем стандартные поля groups и user_permissions
     groups = None
     user_permissions = None
+    last_login = None
 
     class Meta:
         swappable = 'AUTH_USER_MODEL'
@@ -127,7 +133,7 @@ class Subject(BaseModel):
 
 # уроки
 class Lesson(BaseModel):
-    date = models.DateTimeField(verbose_name='Дата урока')
+    date = models.DateField(verbose_name='Дата урока')
     group = models.ForeignKey(
         SchoolGroup,
         on_delete=models.CASCADE,

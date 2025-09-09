@@ -45,7 +45,7 @@ class UserViewSet(viewsets.ModelViewSet):
 class UserRoleViewSet(viewsets.ModelViewSet):
     queryset = UserRole.objects.all().order_by('-created_at')
     serializer_class = UserRoleSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
         """Фильтрация по пользователю если передан user_id"""
@@ -60,7 +60,7 @@ class UserRoleViewSet(viewsets.ModelViewSet):
 class SchoolGroupViewSet(viewsets.ModelViewSet):
     queryset = SchoolGroup.objects.all().order_by('name')
     serializer_class = SchoolGroupSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.AllowAny]
 
     @action(detail=True, methods=['get'])
     def statistics(self, request, pk=None):
@@ -77,7 +77,7 @@ class SchoolGroupViewSet(viewsets.ModelViewSet):
 
 
 # ==================== ПРЕДМЕТЫ ====================
-class SubjectViewSet(viewsets.ReadOnlyModelViewSet):
+class SubjectViewSet(viewsets.ModelViewSet):
     queryset = Subject.objects.all().order_by('full_name')
     serializer_class = SubjectSerializer
     permission_classes = [permissions.AllowAny]
@@ -87,7 +87,7 @@ class SubjectViewSet(viewsets.ReadOnlyModelViewSet):
 class LessonViewSet(viewsets.ModelViewSet):
     queryset = Lesson.objects.all().order_by('-date')
     serializer_class = LessonSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
         """Фильтрация уроков по группе, предмету или учителю"""
@@ -125,7 +125,7 @@ class LessonViewSet(viewsets.ModelViewSet):
 class AssignmentViewSet(viewsets.ModelViewSet):
     queryset = Assignment.objects.all().order_by('-created_at')
     serializer_class = AssignmentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
         """Фильтрация заданий по уроку или типу"""
@@ -154,7 +154,7 @@ class AssignmentViewSet(viewsets.ModelViewSet):
 class GradeViewSet(viewsets.ModelViewSet):
     queryset = Grade.objects.all().order_by('-graded_at')
     serializer_class = GradeSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
         """Фильтрация оценок по студенту, заданию или предмету"""
@@ -178,7 +178,7 @@ class GradeViewSet(viewsets.ModelViewSet):
 class StudentSubjectAverageViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = StudentSubjectAverage.objects.all().order_by('-average_score')
     serializer_class = StudentSubjectAverageSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
         """Фильтрация по студенту или предмету"""
@@ -197,7 +197,7 @@ class StudentSubjectAverageViewSet(viewsets.ReadOnlyModelViewSet):
 
 # ==================== СТАТИСТИКА ====================
 class StatisticsView(generics.GenericAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get(self, request):
         """Общая статистика системы"""
@@ -222,7 +222,7 @@ class StatisticsView(generics.GenericAPIView):
 class UserGradesView(generics.ListAPIView):
     """Все оценки конкретного пользователя"""
     serializer_class = GradeSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
         user_id = self.kwargs['pk']
@@ -232,7 +232,7 @@ class UserGradesView(generics.ListAPIView):
 class UserAveragesView(generics.ListAPIView):
     """Все средние баллы конкретного пользователя"""
     serializer_class = StudentSubjectAverageSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
         user_id = self.kwargs['pk']
@@ -242,7 +242,7 @@ class UserAveragesView(generics.ListAPIView):
 class GroupLessonsView(generics.ListAPIView):
     """Все уроки конкретной группы"""
     serializer_class = LessonSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
         group_id = self.kwargs['pk']
@@ -252,7 +252,7 @@ class GroupLessonsView(generics.ListAPIView):
 class TeacherLessonsView(generics.ListAPIView):
     """Все уроки конкретного учителя"""
     serializer_class = LessonSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
         teacher_id = self.kwargs['pk']

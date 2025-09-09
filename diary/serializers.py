@@ -1,3 +1,4 @@
+from psycopg2._psycopg import IntegrityError
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.core.validators import ValidationError
@@ -66,6 +67,7 @@ class UserSerializer(serializers.ModelSerializer):
             if age > 100:
                 raise serializers.ValidationError("Проверьте дату рождения")
         return value
+
 
 
 class UserCreateSerializer(UserSerializer):

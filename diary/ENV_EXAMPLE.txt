@@ -1,0 +1,11 @@
+SECRET_KEY = 'django-insecure-o@fpk5(b=1-j@hvi15203%=7#w%&+15&v^vu9d$zotcb(-=3=7'
+
+DEBUG = 'True'
+
+ENGINE=django.db.backends.postgresql
+NAME=diary
+USER=postgres
+PASSWORD=postgres
+HOST=localhost
+PORT=5432
+
