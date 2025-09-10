@@ -175,7 +175,7 @@ class GradeViewSet(viewsets.ModelViewSet):
 
 
 # ==================== СРЕДНИЕ БАЛЛЫ ====================
-class StudentSubjectAverageViewSet(viewsets.ReadOnlyModelViewSet):
+class StudentSubjectAverageViewSet(viewsets.ModelViewSet):
     queryset = StudentSubjectAverage.objects.all().order_by('-average_score')
     serializer_class = StudentSubjectAverageSerializer
     permission_classes = [permissions.AllowAny]

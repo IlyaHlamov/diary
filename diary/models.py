@@ -246,7 +246,7 @@ class StudentSubjectAverage(BaseModel):
         verbose_name='Предмет'
     )
     average_score = models.DecimalField(
-        max_digits=4,
+        max_digits=5,
         decimal_places=2,
         verbose_name='Средний балл'
     )
