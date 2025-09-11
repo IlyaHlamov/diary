@@ -9,8 +9,23 @@ from .serializers import (
     SubjectSerializer, LessonSerializer, AssignmentSerializer, GradeSerializer,
     StudentSubjectAverageSerializer
 )
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
+from .serializers import CustomTokenObtainPairSerializer
 
 User = get_user_model()
+
+# ==================== КАСТОМНЫЕ PERMISSIONS ====================
+class IsTeacher(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.roles.filter(role_type='teacher').exists()
+
+class IsStudent(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.roles.filter(role_type__in=['student', 'temp_student']).exists()
+
+class IsDirector(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.roles.filter(role_type='director').exists()
 
 
 # ==================== ПОЛЬЗОВАТЕЛИ ====================
@@ -45,7 +60,7 @@ class UserViewSet(viewsets.ModelViewSet):
 class UserRoleViewSet(viewsets.ModelViewSet):
     queryset = UserRole.objects.all().order_by('-created_at')
     serializer_class = UserRoleSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         """Фильтрация по пользователю если передан user_id"""
@@ -125,7 +140,7 @@ class LessonViewSet(viewsets.ModelViewSet):
 class AssignmentViewSet(viewsets.ModelViewSet):
     queryset = Assignment.objects.all().order_by('-created_at')
     serializer_class = AssignmentSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated, IsTeacher]
 
     def get_queryset(self):
         """Фильтрация заданий по уроку или типу"""
@@ -257,3 +272,19 @@ class TeacherLessonsView(generics.ListAPIView):
     def get_queryset(self):
         teacher_id = self.kwargs['pk']
         return Lesson.objects.filter(teacher_id=teacher_id).order_by('-date')
+
+
+# ==================== JWT ВЬЮШКИ ====================
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
+    # Явно указываем, какие поля ожидаем
+    def get_serializer(self, *args, **kwargs):
+        serializer_class = self.get_serializer_class()
+        kwargs['context'] = self.get_serializer_context()
+        return serializer_class(*args, **kwargs)
+
+class CustomTokenRefreshView(TokenRefreshView):
+    pass
+
+class CustomTokenVerifyView(TokenVerifyView):
+    pass

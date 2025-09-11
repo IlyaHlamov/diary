@@ -1,6 +1,6 @@
-from psycopg2._psycopg import IntegrityError
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import serializers
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate
 from django.core.validators import ValidationError
 from datetime import date, timedelta
 import re
@@ -349,3 +349,24 @@ class StudentSubjectAverageSerializer(serializers.ModelSerializer):
         if value < 0 or value > 100:
             raise serializers.ValidationError("Средний балл должен быть между 0 и 100")
         return round(value, 2)
+
+
+# ==================== JWT СЕРИАЛИЗАТОРЫ ====================
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    # Теперь можно использовать стандартную валидацию
+    username_field = 'email'  # ← Указываем какое поле использовать
+
+    def validate(self, attrs):
+        # Просто используем стандартную валидацию
+        data = super().validate(attrs)
+
+        # Добавляем кастомные данные
+        data['user'] = {
+            'id': str(self.user.id),
+            'email': self.user.email,
+            'first_name': self.user.first_name,
+            'last_name': self.user.last_name,
+            'roles': [role.role_type for role in self.user.roles.all()]
+        }
+
+        return data

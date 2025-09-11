@@ -24,6 +24,7 @@ class BaseModel(models.Model):
 
 # пользователи
 class User(AbstractUser, BaseModel):
+    username = None
     phone_regex = RegexValidator(regex=r'^\+?1?\d{9,12}$',message="формат: '+999999999'. До 12 цифр.")
 
 
@@ -32,8 +33,10 @@ class User(AbstractUser, BaseModel):
     last_name = models.CharField(max_length=50, verbose_name='Фамилия')
     phone_number = models.CharField(validators=[phone_regex],max_length=13,blank=True,verbose_name='Номер телефона')
     birth_date = models.DateField(null=True, blank=True, verbose_name='Дата рождения')
-    username = models.CharField(max_length=150,unique=True,blank=True,null=True,default=None,)
 
+
+    USERNAME_FIELD = 'email'  # ← Используем email вместо username
+    REQUIRED_FIELDS = ['first_name', 'last_name']  # Обязательные поля
 
     # Убираем стандартные поля groups и user_permissions
     groups = None
