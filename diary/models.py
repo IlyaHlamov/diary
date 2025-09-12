@@ -289,3 +289,25 @@ class StudentSubjectAverage(BaseModel):
             )
         else:
             cls.objects.filter(student=student, subject=subject).delete()
+
+
+class PasswordResetCode(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reset_codes')
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Код сброса пароля'
+        verbose_name_plural = 'Коды сброса пароля'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.email} - {self.code}"
+
+    def is_valid(self):
+        """Проверяет, действителен ли код"""
+        from django.utils import timezone
+        from datetime import timedelta
+        return not self.is_used and (timezone.now() - self.created_at) < timedelta(hours=1)

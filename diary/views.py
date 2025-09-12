@@ -1,17 +1,19 @@
+import random
+
 from rest_framework import viewsets, generics, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from django.db.models import Q, Avg, Count
-from .models import UserRole, SchoolGroup, Subject, Lesson, Assignment, Grade, StudentSubjectAverage
+from .models import UserRole, SchoolGroup, Subject, Lesson, Assignment, Grade, StudentSubjectAverage, PasswordResetCode
 from .serializers import (
     UserSerializer, UserCreateSerializer, UserRoleSerializer, SchoolGroupSerializer,
     SubjectSerializer, LessonSerializer, AssignmentSerializer, GradeSerializer,
-    StudentSubjectAverageSerializer
+    StudentSubjectAverageSerializer, PasswordResetRequestSerializer, PasswordResetVerifySerializer
 )
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
 from .serializers import CustomTokenObtainPairSerializer
-
+from .tasks import send_password_reset_email
 User = get_user_model()
 
 # ==================== КАСТОМНЫЕ PERMISSIONS ====================
@@ -288,3 +290,78 @@ class CustomTokenRefreshView(TokenRefreshView):
 
 class CustomTokenVerifyView(TokenVerifyView):
     pass
+
+
+class PasswordResetViewSet(viewsets.ViewSet):
+    @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
+    def request_reset(self, request):
+        """Запрос кода сброса пароля"""
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data['email']
+        user = User.objects.get(email=email)
+
+        # Генерируем 6-значный код
+        code = str(random.randint(100000, 999999))
+
+        # Удаляем старые коды пользователя
+        PasswordResetCode.objects.filter(user=user).delete()
+
+        # Создаем новый код
+        reset_code = PasswordResetCode.objects.create(
+            user=user,
+            code=code,
+            # ip_address=self.get_client_ip(request)
+        )
+
+        # Отправляем email АСИНХРОННО через RabbitMQ
+        send_password_reset_email.delay(user.email, code)
+
+        return Response({
+            'message': 'Код сброса пароля отправлен на email',
+            'email': user.email
+        }, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
+    def verify_code(self, request):
+        """Проверка кода и сброс пароля"""
+        serializer = PasswordResetVerifySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data['email']
+        code = serializer.validated_data['code']
+        new_password = serializer.validated_data['new_password']
+
+        try:
+            user = User.objects.get(email=email)
+            reset_code = PasswordResetCode.objects.get(user=user, code=code, is_used=False)
+
+            if not reset_code.is_valid():
+                return Response(
+                    {'error': 'Код недействителен или устарел'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Меняем пароль
+            user.set_password(new_password)
+            user.save()
+
+            # Помечаем код как использованный
+            reset_code.is_used = True
+            reset_code.save()
+
+            return Response({
+                'message': 'Пароль успешно изменен'
+            }, status=status.HTTP_200_OK)
+
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'Пользователь не найден'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except PasswordResetCode.DoesNotExist:
+            return Response(
+                {'error': 'Неверный код'},
+                status=status.HTTP_400_BAD_REQUEST
+            )

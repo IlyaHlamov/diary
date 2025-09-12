@@ -26,7 +26,7 @@ class UUIDField(serializers.Field):
 
 # ==================== ПОЛЬЗОВАТЕЛИ ====================
 class UserSerializer(serializers.ModelSerializer):
-    id = UUIDField(read_only=True)
+
     age = serializers.IntegerField(read_only=True)
     full_name = serializers.CharField(source='get_full_name', read_only=True)
 
@@ -101,7 +101,7 @@ class UserCreateSerializer(UserSerializer):
 
 # ==================== РОЛИ ====================
 class UserRoleSerializer(serializers.ModelSerializer):
-    id = UUIDField(read_only=True)
+
     role_type_display = serializers.CharField(source='get_role_type_display', read_only=True)
     user_name = serializers.CharField(source='user.get_full_name', read_only=True)
 
@@ -130,7 +130,7 @@ class UserRoleSerializer(serializers.ModelSerializer):
 
 # ==================== ГРУППЫ (КЛАССЫ) ====================
 class SchoolGroupSerializer(serializers.ModelSerializer):
-    id = UUIDField(read_only=True)
+
     teacher_name = serializers.CharField(source='teacher.get_full_name', read_only=True)
     students_count = serializers.IntegerField(source='get_students_count', read_only=True)
 
@@ -174,7 +174,7 @@ class SchoolGroupSerializer(serializers.ModelSerializer):
 
 # ==================== ПРЕДМЕТЫ ====================
 class SubjectSerializer(serializers.ModelSerializer):
-    id = UUIDField(read_only=True)
+
 
     class Meta:
         model = Subject
@@ -212,7 +212,7 @@ class SubjectSerializer(serializers.ModelSerializer):
 
 # ==================== УРОКИ ====================
 class LessonSerializer(serializers.ModelSerializer):
-    id = UUIDField(read_only=True)
+
     subject_name = serializers.CharField(source='subject.full_name', read_only=True)
     group_name = serializers.CharField(source='group.name', read_only=True)
     teacher_name = serializers.CharField(source='teacher.get_full_name', read_only=True)
@@ -254,7 +254,7 @@ class LessonSerializer(serializers.ModelSerializer):
 
 # ==================== ЗАДАНИЯ ====================
 class AssignmentSerializer(serializers.ModelSerializer):
-    id = UUIDField(read_only=True)
+
     assignment_type_display = serializers.CharField(source='get_assignment_type_display', read_only=True)
     lesson_info = serializers.CharField(source='lesson.__str__', read_only=True)
     max_score = serializers.IntegerField(min_value=1, max_value=100)
@@ -287,7 +287,7 @@ class AssignmentSerializer(serializers.ModelSerializer):
 
 # ==================== ОЦЕНКИ ====================
 class GradeSerializer(serializers.ModelSerializer):
-    id = UUIDField(read_only=True)
+
     student_name = serializers.CharField(source='student.get_full_name', read_only=True)
     assignment_title = serializers.CharField(source='assignment.title', read_only=True)
     subject_name = serializers.CharField(source='assignment.lesson.subject.full_name', read_only=True)
@@ -332,7 +332,7 @@ class GradeSerializer(serializers.ModelSerializer):
 
 # ==================== СРЕДНИЕ БАЛЛЫ ====================
 class StudentSubjectAverageSerializer(serializers.ModelSerializer):
-    id = UUIDField(read_only=True)
+
     student_name = serializers.CharField(source='student.get_full_name', read_only=True)
     subject_name = serializers.CharField(source='subject.full_name', read_only=True)
 
@@ -370,3 +370,58 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         }
 
         return data
+
+
+# ==================== сброс поноса ====================
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+
+    def validate_email(self, value):
+        if not User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Пользователь с таким email не найден")
+        return value
+
+class PasswordResetVerifySerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    code = serializers.CharField(max_length=6, required=True)
+    new_password = serializers.CharField(min_length=8, required=True)
+    confirm_password = serializers.CharField(min_length=8, required=True)
+
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['confirm_password']:
+            raise serializers.ValidationError("Пароли не совпадают")
+        return attrs
+
+    def validate_code(self, value):
+        if not value.isdigit() or len(value) != 6:
+            raise serializers.ValidationError("Код должен состоять из 6 цифр")
+        return value
+
+# class PasswordResetRequestSerializer(serializers.Serializer):
+#     email = serializers.EmailField(
+#         required=True,
+#         help_text="Email пользователя для сброса пароля"
+#     )
+#
+# class PasswordResetVerifySerializer(serializers.Serializer):
+#     email = serializers.EmailField(
+#         required=True,
+#         help_text="Email пользователя"
+#     )
+#     code = serializers.CharField(
+#         max_length=6,
+#         required=True,
+#         help_text="6-значный код из email"
+#     )
+#     new_password = serializers.CharField(
+#         min_length=8,
+#         required=True,
+#         write_only=True,
+#         help_text="Новый пароль (мин. 8 символов)"
+#     )
+#     confirm_password = serializers.CharField(
+#         min_length=8,
+#         required=True,
+#         write_only=True,
+#         help_text="Подтверждение нового пароля"
+#     )

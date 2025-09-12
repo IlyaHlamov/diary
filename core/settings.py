@@ -48,6 +48,30 @@ REST_FRAMEWORK = {
     ],
 }
 
+# Простые настройки Celery
+# Celery с RabbitMQ
+CELERY_BROKER_URL = 'amqp://guest:guest@localhost:5672/'
+CELERY_RESULT_BACKEND = 'rpc://'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Europe/Moscow'
+
+
+# Для разработки - вывод в консоль
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# # Для production используйте:
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = 'your@gmail.com'
+# EMAIL_HOST_PASSWORD = 'your-app-password'
+# DEFAULT_FROM_EMAIL = 'your@gmail.com'
+
+
+
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
